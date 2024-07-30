@@ -1,0 +1,18 @@
+.card {
+    transition: transform 0.3s ease;
+    border-radius: 2ex;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+#card-exclude {
+    transform: none;
+    border-radius: 0%;
+}
+
+#timestamp {
+    font-size: 80%;
+    color: dimgray;
+}

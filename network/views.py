@@ -3,12 +3,36 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.http import JsonResponse
 
-from .models import User
+from .models import *
 
 
 def index(request):
-    return render(request, "network/index.html")
+    all_posts = Post.objects.all().order_by('-timestamp')
+    paginator = Paginator(all_posts, 10)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+    likes = Like.objects.all()
+
+    #posts that you liked
+    liked = []
+    if request.user.is_authenticated:
+        for like in likes:
+            if like.user.id == request.user.id:
+                liked.append(like.post.id)
+
+    #save number of likes for posts
+    for post in posts:
+        post.likes = Like.objects.filter(post = post).count()
+        post.save()
+
+    return render(request, "network/index.html", {
+        "all_posts": posts,
+        "liked": liked
+    })
 
 
 def login_view(request):
@@ -61,3 +85,45 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+
+@login_required
+def newPost(request):
+   if request.method == 'POST':
+       user = request.user
+       content = request.POST['content']
+       post = Post(user = user, content = content)
+       post.save()
+       return HttpResponseRedirect(reverse(index))
+   
+
+@login_required
+def likePost(request, postId):
+    if request.method == 'POST':
+        user = request.user
+        post = Post.objects.get(id = postId)
+        like = Like(user = user, post = post)
+        like.save()
+
+        likes = Like.objects.filter(post = post).count()
+        
+        return JsonResponse({
+            "message": "Like added.",
+            "likes": likes
+        })
+
+
+@login_required
+def unlikePost(request, postId):
+    if request.method == 'POST':
+        user = request.user
+        post = Post.objects.get(id = postId)
+        like = Like.objects.filter(user = user, post = post)
+        like.delete()
+        
+        likes = Like.objects.filter(post = post).count()
+        
+        return JsonResponse({
+            "message": "Like removed.",
+            "likes": likes
+        })

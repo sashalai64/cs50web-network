@@ -1,5 +1,77 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
-    TODO
+
+<script>
+
+    //when like or unlike button is clicked
+    function toggleLike(id) {
+        const btn = document.querySelector(`#like-button-${id}`) || document.querySelector(`#unlike-button-${id}`);
+        const likeNum = document.querySelector(`#like-num-${id}`);
+        const action = btn.innerHTML.includes("♡") ? "like" : "unlike";
+        const url = action === "like" ? `/like/${id}` : `/unlike/${id}`;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (action === "like" && data.message === "Like added.") {
+                btn.innerHTML = `♥︎ <span id="like-num-${id}">${data.likes}</span>`;
+                btn.id = `unlike-button-${id}`;
+                btn.onclick = () => toggleLike(id);
+
+            } else if (action === "unlike" && data.message === "Like removed.") {
+                btn.innerHTML = `♡ <span id="like-num-${id}">${data.likes}</span>`;
+                btn.id = `like-button-${id}`;
+                btn.onclick = () => toggleLike(id);
+            }
+        })
+    }
+
+</script>
+
+<h2 class="p-3">All Posts</h2>
+
+{% if user.is_authenticated %}
+<div class="container m-1 p-3">
+    <div class="card p-3" id="card-exclude">
+        <h3>New Post</h3>
+        <form action="{% url 'newPost' %}" method="post">
+            {% csrf_token %}
+            <textarea class="post-control" name="content" style="border-color: lightgray; width: 100%;"></textarea>
+            
+            <div class="button">
+                <input class="btn btn-primary" type="submit" placeholder="What's on your mind?" value="Post">
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% for post in all_posts %}
+    <div class="container m-1 p-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <a href=""><h4 class="card-title">{{ post.user }}</h4></a>
+                <p class="card-text">{{ post.content }}</p>
+                <p class="card-text" id="timestamp">{{ post.timestamp }}</p>
+
+                {% if user.is_authenticated %}
+                    <button id="{% if post.id in liked %}unlike-button-{{ post.id }}{% else %}like-button-{{ post.id }}{% endif %}" 
+                            style="border: none; background-color: white;" 
+                            onclick="toggleLike('{{ post.id }}')">
+                    
+                        {% if post.id in liked %}♥︎{% else %}♡{% endif %}
+                        <span id="like-num-{{ post.id }}">{{ post.likes }}</span>
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
 {% endblock %}
