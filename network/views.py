@@ -30,7 +30,7 @@ def index(request):
         post.save()
 
     return render(request, "network/index.html", {
-        "all_posts": posts,
+        "posts": posts,
         "liked": liked
     })
 

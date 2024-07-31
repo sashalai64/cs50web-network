@@ -37,7 +37,7 @@
 <h2 class="p-3">All Posts</h2>
 
 {% if user.is_authenticated %}
-<div class="container m-1 p-3">
+<div class="container-fluid p-3">
     <div class="card p-3" id="card-exclude">
         <h3>New Post</h3>
         <form action="{% url 'newPost' %}" method="post">
@@ -52,8 +52,8 @@
 </div>
 {% endif %}
 
-{% for post in all_posts %}
-    <div class="container m-1 p-3">
+{% for post in posts %}
+    <div class="container-fluid p-3">
         <div class="card shadow-sm">
             <div class="card-body">
                 <a href=""><h4 class="card-title">{{ post.user }}</h4></a>
@@ -68,10 +68,26 @@
                         {% if post.id in liked %}♥︎{% else %}♡{% endif %}
                         <span id="like-num-{{ post.id }}">{{ post.likes }}</span>
                     </button>
+                {% else %}
+                    <p>♡ {{ post.likes }}</p>
                 {% endif %}
             </div>
         </div>
     </div>
+    {% empty %} 
+        <p class="m-3">NO POSTS...</p>
 {% endfor %}
+
+
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if posts.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ posts.previous_page_number }}">Previous</a></li>
+        {% endif %}
+        {% if posts.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ posts.next_page_number }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
 
 {% endblock %}
