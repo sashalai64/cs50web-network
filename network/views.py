@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import json
 
 from .models import *
 
@@ -32,7 +33,7 @@ def index(request):
 
     return render(request, "network/index.html", {
         "posts": posts,
-        "liked": liked
+        "liked": liked,
     })
 
 
@@ -93,6 +94,10 @@ def newPost(request):
    if request.method == 'POST':
        user = request.user
        content = request.POST['content']
+       if content == '':
+           return render(request, 'network/index.html', {
+               'message': "Post content cannot be empty."
+           })
        post = Post(user = user, content = content)
        post.save()
        return HttpResponseRedirect(reverse(index))
@@ -134,11 +139,12 @@ def unlikePost(request, postId):
 @csrf_exempt
 def edit(request, postId):
     if request.method == 'POST':
+        body = json.loads(request.body)
         user = request.user
         post = Post.objects.get(id = postId)
 
         if user == post.user:
-            content = request.POST['content']
+            content = body['content']
             post.content = content
             post.save()
             return JsonResponse({

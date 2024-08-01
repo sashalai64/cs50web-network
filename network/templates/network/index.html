@@ -4,10 +4,20 @@
 
 <script>
 
+    function validatePost() {
+        const textArea = document.getElementById('new-post-content');
+        const content = textArea.value;
+
+        if (content === "") {
+            alert("Post content cannot be empty.")
+            return false;
+        } 
+        return true;
+    }
+
     //when like or unlike button is clicked
     function toggleLike(id) {
         const btn = document.querySelector(`#like-button-${id}`) || document.querySelector(`#unlike-button-${id}`);
-        const likeNum = document.querySelector(`#like-num-${id}`);
         const action = btn.innerHTML.includes("♡") ? "like" : "unlike";
         const url = action === "like" ? `/like/${id}` : `/unlike/${id}`;
 
@@ -57,7 +67,7 @@
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: new URLSearchParams({
+            body: JSON.stringify({
                 'content': newContent
             })
         })
@@ -99,12 +109,15 @@
 <h2 class="p-3">All Posts</h2>
 
 {% if user.is_authenticated %}
+{% if message %}
+    <strong>{{ message }}</strong>
+{% endif %}
 <div class="container-fluid p-3">
     <div class="card p-3" id="card-exclude">
         <h3>New Post</h3>
-        <form action="{% url 'newPost' %}" method="post">
+        <form action="{% url 'newPost' %}" method="post" onsubmit="return validatePost()">
             {% csrf_token %}
-            <textarea class="post-control" name="content" placeholder=" What's on your mind?"></textarea>
+            <textarea id="new-post-content" class="post-control" name="content" placeholder=" What's on your mind?"></textarea>
             
             <div class="button">
                 <input class="btn btn-primary" type="submit" value="Post">
