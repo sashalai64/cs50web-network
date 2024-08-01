@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import *
 
@@ -127,3 +128,22 @@ def unlikePost(request, postId):
             "message": "Like removed.",
             "likes": likes
         })
+    
+
+@login_required
+@csrf_exempt
+def edit(request, postId):
+    if request.method == 'POST':
+        user = request.user
+        post = Post.objects.get(id = postId)
+
+        if user == post.user:
+            content = request.POST['content']
+            post.content = content
+            post.save()
+            return JsonResponse({
+                "message": "Changes saved.",
+                "content": content
+            })
+        else:
+            return JsonResponse({"message": "You cannot edit this post."}, status = 403)

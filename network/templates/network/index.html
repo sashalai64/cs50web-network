@@ -32,6 +32,68 @@
         })
     }
 
+    function editPost(id) {
+        const editButton = document.querySelector(`#edit-button-${id}`);
+        const postContent = document.querySelector(`#post-content-${id}`);
+        const currentContent = postContent.innerText;
+
+        // Store the original content in a data attribute
+        postContent.setAttribute('data-original-content', currentContent);
+
+        postContent.innerHTML = `
+            <textarea id="edit-textarea-${id}" class="post-control">${currentContent}</textarea>
+            <button id="edit-save-${id}" class="btn btn-primary" onclick="saveEdit(${id})">Save</button>
+            <button id="edit-cancel-${id}" class="btn btn-primary" onclick="cancelEdit(${id})">Cancel</button>`;
+
+        editButton.style.display = 'none';
+    }
+
+    function saveEdit(id) {
+        const textArea = document.querySelector(`#edit-textarea-${id}`);
+        const newContent = textArea.value;
+
+        fetch(`/edit/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: new URLSearchParams({
+                'content': newContent
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === "Changes saved.") {
+                const postContent = document.querySelector(`#post-content-${id}`);
+                postContent.innerHTML = data.content;
+
+                const editButton = document.querySelector(`#edit-button-${id}`);
+                editButton.style.display = 'inline';
+
+                //textarea.remove();
+                //document.querySelector(`#edit-save-${id}`).remove();
+                //document.querySelector(`#edit-cancel-${id}`).remove();
+            } else {
+                alert(data.message);
+            }
+        })
+    }
+
+    function cancelEdit(id) {
+        const postContent = document.querySelector(`#post-content-${id}`);
+        const editButton = document.querySelector(`#edit-button-${id}`);
+
+        // Retrieve the original content from the data attribute
+        const originalContent = postContent.getAttribute('data-original-content');
+
+        postContent.innerHTML = originalContent;
+        editButton.style.display = 'inline';
+
+        //document.querySelector(`#edit-textarea-${id}`).remove();
+        //document.querySelector(`#edit-save-${id}`).remove();
+        //document.querySelector(`#edit-cancel-${id}`).remove();
+    }
+
 </script>
 
 <h2 class="p-3">All Posts</h2>
@@ -42,27 +104,35 @@
         <h3>New Post</h3>
         <form action="{% url 'newPost' %}" method="post">
             {% csrf_token %}
-            <textarea class="post-control" name="content" style="border-color: lightgray; width: 100%;"></textarea>
+            <textarea class="post-control" name="content" placeholder=" What's on your mind?"></textarea>
             
             <div class="button">
-                <input class="btn btn-primary" type="submit" placeholder="What's on your mind?" value="Post">
+                <input class="btn btn-primary" type="submit" value="Post">
             </div>
         </form>
     </div>
 </div>
 {% endif %}
 
+
 {% for post in posts %}
     <div class="container-fluid p-3">
         <div class="card shadow-sm">
             <div class="card-body">
                 <a href=""><h4 class="card-title">{{ post.user }}</h4></a>
-                <p class="card-text">{{ post.content }}</p>
+
+                {% if user.is_authenticated %}
+                    {% if request.user == post.user %}
+                        <button class="btn btn-link p-0" id="edit-button-{{ post.id }}" onclick="editPost('{{ post.id }}')">Edit</button>
+                    {% endif %}
+                {% endif %}
+
+                <div id="post-content-{{ post.id }}" class="card-text">{{ post.content }}</div>
                 <p class="card-text" id="timestamp">{{ post.timestamp }}</p>
 
                 {% if user.is_authenticated %}
-                    <button id="{% if post.id in liked %}unlike-button-{{ post.id }}{% else %}like-button-{{ post.id }}{% endif %}" 
-                            style="border: none; background-color: white;" 
+                    <button class="button" 
+                            id="{% if post.id in liked %}unlike-button-{{ post.id }}{% else %}like-button-{{ post.id }}{% endif %}" 
                             onclick="toggleLike('{{ post.id }}')">
                     
                         {% if post.id in liked %}♥︎{% else %}♡{% endif %}
@@ -75,7 +145,7 @@
         </div>
     </div>
     {% empty %} 
-        <p class="m-3">NO POSTS...</p>
+        <p class="m-3">Be the first one to make a post!</p>
 {% endfor %}
 
 
