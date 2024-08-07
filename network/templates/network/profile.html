@@ -127,18 +127,19 @@
 </script>
 
 <div class="container-fluid p-3">
-    <h2> {{ profile_user.username }} </h2>
+    <h2 class="mb-2 me-3"> {{ profile_user.username }} </h2>
+        <div class="d-flex align-items-center">
+            <p id="follower-count-{{ profile_user.id }}" class="mb-0 me-3">Followers: {{ follower_count }}</p>
+            <p id="following-count-{{ profile_user.id }}" class="mb-0 me-3">Following: {{ following_count }}</p>
 
-    <p id="follower-count-{{ profile_user.id }}">Followers: {{ follower_count }}</p>
-    <p id="following-count-{{ profile_user.id }}">Following: {{ following_count }}</p>
-
-    {% if user.is_authenticated and request.user != profile_user %}
-        {% if is_following %}
-            <button id="unfollow-button-{{ profile_user.id }}" class="btn btn-danger" onclick="toggleFollow('{{ profile_user.id }}')">Unfollow</button>
-        {% else %}
-            <button id="follow-button-{{ profile_user.id }}" class="btn btn-primary" onclick="toggleFollow('{{ profile_user.id }}')">Follow</button>
-        {% endif %}
-    {% endif %}
+            {% if user.is_authenticated and request.user != profile_user %}
+                {% if is_following %}
+                    <button id="unfollow-button-{{ profile_user.id }}" class="btn btn-danger" onclick="toggleFollow('{{ profile_user.id }}')">Unfollow</button>
+                {% else %}
+                    <button id="follow-button-{{ profile_user.id }}" class="btn btn-primary" onclick="toggleFollow('{{ profile_user.id }}')">Follow</button>
+                {% endif %}
+            {% endif %}
+        </div>
 </div>
 
 {% if user.is_authenticated %}
