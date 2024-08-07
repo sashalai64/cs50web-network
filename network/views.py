@@ -191,10 +191,10 @@ def following(request):
 @login_required
 def follow_toggle(request, userId):
     if request.method == 'POST':
+        profile_user = User.objects.get(id = userId)
         follow_exist = Follow.objects.filter(follower=request.user, following=profile_user).exists()
-
+        
         if follow_exist:
-            profile_user = User.objects.get(id = userId)
             follow = Follow.objects.get(follower = request.user, following = profile_user)
             follow.delete()
             is_following = False
@@ -206,7 +206,6 @@ def follow_toggle(request, userId):
             })
 
         else:
-            profile_user = User.objects.get(id = userId)
             if profile_user != request.user:
                 follow = Follow(follower = request.user, following = profile_user)
                 follow.save()
@@ -218,12 +217,10 @@ def follow_toggle(request, userId):
                     "follower_count": follower_count
                 })
             
-            else: return JsonResponse({"error": "You cannot follow yourself."}, status=400)
+            else: return JsonResponse({"error": "You cannot follow yourself."}, status = 400)
 
 
 def profile(request, userId):
-    
-    
     profile_user = User.objects.get(id = userId)
     user_posts = Post.objects.filter(user = profile_user).order_by('-timestamp')
     following_count = Follow.objects.filter(follower = profile_user).count()

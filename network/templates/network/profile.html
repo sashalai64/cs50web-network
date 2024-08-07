@@ -6,7 +6,7 @@
 
     function toggleFollow(id) {
         const followButton = document.querySelector(`#follow-button-${id}`) || document.querySelector(`#unfollow-button-${id}`);
-        const followers = document.querySelector(`#follower-count-${id}`)
+        const followers = document.querySelector(`#follower-count-${id}`);
 
         fetch(`/followToggle/${id}`, {
             method: 'POST',
@@ -16,16 +16,18 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (is_following) {
+            if (data.is_following) {
                 followButton.innerHTML = "Unfollow";
-                followButton.id = `#unfollow-button-${id}`;
-                followers.innerHTML = data.follower_count;
-                followButton.onclick = () => followToggle(id);
+                followButton.id = `unfollow-button-${id}`;
+                followButton.className = "btn btn-danger"
+                followers.innerHTML = `Followers: ${data.follower_count}`;
+                followButton.onclick = () => toggleFollow(id);
             } else {
                 followButton.innerHTML = "Follow";
-                followButton.id = `#follow-button-${id}`;
-                followers.innerHTML = data.follower_count;
-                followButton.onclick = () => followToggle(id);
+                followButton.id = `follow-button-${id}`;
+                followButton.className = "btn btn-primary"
+                followers.innerHTML = `Followers: ${data.follower_count}`;
+                followButton.onclick = () => toggleFollow(id);
             }
         })
     }
@@ -132,9 +134,9 @@
 
     {% if user.is_authenticated and request.user != profile_user %}
         {% if is_following %}
-            <button id="unfollow-button-{{ profile_user.id }}" class="btn btn-danger" onclick="followToggle('{{ profile_user.id }}')">Unfollow</button>
+            <button id="unfollow-button-{{ profile_user.id }}" class="btn btn-danger" onclick="toggleFollow('{{ profile_user.id }}')">Unfollow</button>
         {% else %}
-            <button id="follow-button-{{ profile_user.id }}" class="btn btn-primary" onclick="followToggle('{{ profile_user.id }}')">Follow</button>
+            <button id="follow-button-{{ profile_user.id }}" class="btn btn-primary" onclick="toggleFollow('{{ profile_user.id }}')">Follow</button>
         {% endif %}
     {% endif %}
 </div>
