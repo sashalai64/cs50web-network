@@ -4,17 +4,6 @@
 
 <script>
 
-    function validatePost() {
-        const textArea = document.getElementById('new-post-content');
-        const content = textArea.value;
-
-        if (content === "") {
-            alert("Post content cannot be empty.")
-            return false;
-        } 
-        return true;
-    }
-
     //when like or unlike button is clicked
     function toggleLike(id) {
         const btn = document.querySelector(`#like-button-${id}`) || document.querySelector(`#unlike-button-${id}`);
@@ -106,33 +95,15 @@
 
 </script>
 
-<h2 class="p-3">All Posts</h2>
+{%if user.is_authenticated%}
 
-{% if user.is_authenticated %}
-{% if message %}
-    <strong>{{ message }}</strong>
-{% endif %}
-<div class="container-fluid p-3">
-    <div class="card p-3" id="card-exclude">
-        <h3>New Post</h3>
-        <form action="{% url 'newPost' %}" method="post" onsubmit="return validatePost()">
-            {% csrf_token %}
-            <textarea id="new-post-content" class="post-control" name="content" placeholder=" What's on your mind?"></textarea>
-            
-            <div class="button">
-                <input class="btn btn-primary" type="submit" value="Post">
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
-
+<h2 class="p-3">Following</h2>
 
 {% for post in posts %}
     <div class="container-fluid p-3">
         <div class="card shadow-sm">
             <div class="card-body">
-                <a href="{% url 'profile' post.user.id %}"><h4 class="card-title">{{ post.user }}</h4></a>
+                <a href=""><h4 class="card-title">{{ post.user }}</h4></a>
 
                 {% if user.is_authenticated %}
                     {% if request.user == post.user %}
@@ -158,7 +129,7 @@
         </div>
     </div>
     {% empty %} 
-        <p class="m-3">Be the first one to make a post!</p>
+        <p class="m-3">You're not following anyone.</p>
 {% endfor %}
 
 
@@ -172,5 +143,7 @@
         {% endif %}
     </ul>
 </nav>
+
+{% endif%}
 
 {% endblock %}

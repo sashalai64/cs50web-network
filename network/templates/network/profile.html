@@ -4,6 +4,32 @@
 
 <script>
 
+    function toggleFollow(id) {
+        const followButton = document.querySelector(`#follow-button-${id}`) || document.querySelector(`#unfollow-button-${id}`);
+        const followers = document.querySelector(`#follower-count-${id}`)
+
+        fetch(`/followToggle/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (is_following) {
+                followButton.innerHTML = "Unfollow";
+                followButton.id = `#unfollow-button-${id}`;
+                followers.innerHTML = data.follower_count;
+                followButton.onclick = () => followToggle(id);
+            } else {
+                followButton.innerHTML = "Follow";
+                followButton.id = `#follow-button-${id}`;
+                followers.innerHTML = data.follower_count;
+                followButton.onclick = () => followToggle(id);
+            }
+        })
+    }
+
     function validatePost() {
         const textArea = document.getElementById('new-post-content');
         const content = textArea.value;
@@ -14,11 +40,11 @@
         } 
         return true;
     }
-
+    
     //when like or unlike button is clicked
     function toggleLike(id) {
-        const btn = document.querySelector(`#like-button-${id}`) || document.querySelector(`#unlike-button-${id}`);
-        const action = btn.innerHTML.includes("♡") ? "like" : "unlike";
+        const likeButton = document.querySelector(`#like-button-${id}`) || document.querySelector(`#unlike-button-${id}`);
+        const action = likeButton.innerHTML.includes("♡") ? "like" : "unlike";
         const url = action === "like" ? `/like/${id}` : `/unlike/${id}`;
 
         fetch(url, {
@@ -30,14 +56,14 @@
         .then(response => response.json())
         .then(data => {
             if (action === "like" && data.message === "Like added.") {
-                btn.innerHTML = `♥︎ <span id="like-num-${id}">${data.likes}</span>`;
-                btn.id = `unlike-button-${id}`;
-                btn.onclick = () => toggleLike(id);
+                likeButton.innerHTML = `♥︎ <span id="like-num-${id}">${data.likes}</span>`;
+                likeButton.id = `unlike-button-${id}`;
+                likeButton.onclick = () => toggleLike(id);
 
             } else if (action === "unlike" && data.message === "Like removed.") {
-                btn.innerHTML = `♡ <span id="like-num-${id}">${data.likes}</span>`;
-                btn.id = `like-button-${id}`;
-                btn.onclick = () => toggleLike(id);
+                likeButton.innerHTML = `♡ <span id="like-num-${id}">${data.likes}</span>`;
+                likeButton.id = `like-button-${id}`;
+                likeButton.onclick = () => toggleLike(id);
             }
         })
     }
@@ -79,10 +105,6 @@
 
                 const editButton = document.querySelector(`#edit-button-${id}`);
                 editButton.style.display = 'inline';
-
-                //textarea.remove();
-                //document.querySelector(`#edit-save-${id}`).remove();
-                //document.querySelector(`#edit-cancel-${id}`).remove();
             } else {
                 alert(data.message);
             }
@@ -98,33 +120,41 @@
 
         postContent.innerHTML = originalContent;
         editButton.style.display = 'inline';
-
-        //document.querySelector(`#edit-textarea-${id}`).remove();
-        //document.querySelector(`#edit-save-${id}`).remove();
-        //document.querySelector(`#edit-cancel-${id}`).remove();
     }
 
 </script>
 
-<h2 class="p-3">All Posts</h2>
+<div class="container-fluid p-3">
+    <h2> {{ profile_user.username }} </h2>
+
+    <p id="follower-count-{{ profile_user.id }}">Followers: {{ follower_count }}</p>
+    <p id="following-count-{{ profile_user.id }}">Following: {{ following_count }}</p>
+
+    {% if user.is_authenticated and request.user != profile_user %}
+        {% if is_following %}
+            <button id="unfollow-button-{{ profile_user.id }}" class="btn btn-danger" onclick="followToggle('{{ profile_user.id }}')">Unfollow</button>
+        {% else %}
+            <button id="follow-button-{{ profile_user.id }}" class="btn btn-primary" onclick="followToggle('{{ profile_user.id }}')">Follow</button>
+        {% endif %}
+    {% endif %}
+</div>
 
 {% if user.is_authenticated %}
-{% if message %}
-    <strong>{{ message }}</strong>
-{% endif %}
-<div class="container-fluid p-3">
-    <div class="card p-3" id="card-exclude">
-        <h3>New Post</h3>
-        <form action="{% url 'newPost' %}" method="post" onsubmit="return validatePost()">
-            {% csrf_token %}
-            <textarea id="new-post-content" class="post-control" name="content" placeholder=" What's on your mind?"></textarea>
-            
-            <div class="button">
-                <input class="btn btn-primary" type="submit" value="Post">
-            </div>
-        </form>
+    {% if request.user == profile_user %}
+    <div class="container-fluid p-3">
+        <div class="card p-3" id="card-exclude">
+            <h3>New Post</h3>
+            <form action="{% url 'newPost' %}" method="post" onsubmit="return validatePost()">
+                {% csrf_token %}
+                <textarea id="new-post-content" class="post-control" name="content" placeholder=" What's on your mind?"></textarea>
+                
+                <div class="button">
+                    <input class="btn btn-primary" type="submit" value="Post">
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+    {% endif %}
 {% endif %}
 
 
@@ -132,7 +162,7 @@
     <div class="container-fluid p-3">
         <div class="card shadow-sm">
             <div class="card-body">
-                <a href="{% url 'profile' post.user.id %}"><h4 class="card-title">{{ post.user }}</h4></a>
+                <h4 class="card-title">{{ post.user }}</h4>
 
                 {% if user.is_authenticated %}
                     {% if request.user == post.user %}
@@ -158,9 +188,8 @@
         </div>
     </div>
     {% empty %} 
-        <p class="m-3">Be the first one to make a post!</p>
+        <p class="m-3">They haven't posted anything yet!</p>
 {% endfor %}
-
 
 <nav aria-label="Page navigation">
     <ul class="pagination justify-content-center">

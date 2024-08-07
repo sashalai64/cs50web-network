@@ -153,3 +153,106 @@ def edit(request, postId):
             })
         else:
             return JsonResponse({"message": "You cannot edit this post."}, status = 403)
+        
+
+@login_required
+def following(request):
+    following_users = Follow.objects.filter(follower = request.user)
+    all_posts = Post.objects.all().order_by('-timestamp')
+    likes = Like.objects.all()
+
+    following_posts = []
+    for post in all_posts:
+        if post.user in following_users:
+            following_posts.append(post)
+    
+    paginator = Paginator(following_posts, 10)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+
+    #posts that you liked
+    liked = []
+    for like in likes:
+        if like.user.id == request.user.id:
+            liked.append(like.post.id)
+
+    #save number of likes for posts
+    for post in posts:
+        post.likes = Like.objects.filter(post = post).count()
+        post.save()
+
+
+    return render(request, 'network/following.html', {
+        "posts": posts,
+        "liked": liked
+    })
+
+
+@login_required
+def follow_toggle(request, userId):
+    if request.method == 'POST':
+        follow_exist = Follow.objects.filter(follower=request.user, following=profile_user).exists()
+
+        if follow_exist:
+            profile_user = User.objects.get(id = userId)
+            follow = Follow.objects.get(follower = request.user, following = profile_user)
+            follow.delete()
+            is_following = False
+            follower_count = Follow.objects.filter(following = profile_user).count()
+
+            return JsonResponse({
+                "is_following": is_following,
+                "follower_count": follower_count
+            })
+
+        else:
+            profile_user = User.objects.get(id = userId)
+            if profile_user != request.user:
+                follow = Follow(follower = request.user, following = profile_user)
+                follow.save()
+                is_following = True
+                follower_count = Follow.objects.filter(following = profile_user).count()   
+
+                return JsonResponse({
+                    "is_following": is_following,
+                    "follower_count": follower_count
+                })
+            
+            else: return JsonResponse({"error": "You cannot follow yourself."}, status=400)
+
+
+def profile(request, userId):
+    
+    
+    profile_user = User.objects.get(id = userId)
+    user_posts = Post.objects.filter(user = profile_user).order_by('-timestamp')
+    following_count = Follow.objects.filter(follower = profile_user).count()
+    follower_count = Follow.objects.filter(following = profile_user).count()
+    likes = Like.objects.all()
+
+    is_following = False
+    liked = []
+
+    if request.user.is_authenticated:
+        is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
+        for like in likes:
+            if like.user.id == request.user.id:
+                liked.append(like.post.id)
+
+    paginator = Paginator(user_posts, 10)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+
+    for post in posts:
+        post.likes = Like.objects.filter(post=post).count()
+        post.save()
+    
+
+    return render(request, "network/profile.html", {
+        "profile_user": profile_user,
+        "is_following": is_following,
+        "following_count": following_count,
+        "follower_count": follower_count,
+        "posts": posts,
+        "liked": liked
+    })
