@@ -33,7 +33,7 @@ This project is a social network platform built using Python, JavaScript, HTML, 
   - Security measures ensure users cannot edit posts of other users.
 
 - **“Like” and “Unlike”**
-  - Users can toggle the “like” status of any post.
+  - Signed-in users can toggle the “like” status of any post.
   - The server is updated asynchronously, and the like count is displayed without reloading the page.
     
 ## Requirements
@@ -46,7 +46,7 @@ This project is a social network platform built using Python, JavaScript, HTML, 
       git clone https://github.com/sashalai64/cs50web-network.git
       ```
       
-2. **Apply migrations**
+2. **Apply Migrations**
     ```
     python manage.py makemigrations
     ```
